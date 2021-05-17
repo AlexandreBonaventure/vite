@@ -72,6 +72,7 @@ export function dynamicImportPolyfillPlugin(config: ResolvedConfig): Plugin {
 /**
 The following polyfill function is meant to run in the browser and adapted from
 https://github.com/GoogleChromeLabs/dynamic-import-polyfill
+and implement this unmerged PR https://github.com/GoogleChromeLabs/dynamic-import-polyfill/pull/7
 MIT License
 Copyright (c) 2018 uupaa and 2019 Google LLC
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -97,10 +98,11 @@ declare const URL: any
 declare const Blob: any
 
 function polyfill(modulePath = '.', importFunctionName = '__import__') {
+  const baseURL = new URL(modulePath, document.baseURI)
   try {
-    self[importFunctionName] = new Function('u', `return import(u)`)
+    self[importFunctionName] = (importee: string) =>
+      new Function('u', 'b', 'return import(new URL(u, b))')(importee, baseURL)
   } catch (error) {
-    const baseURL = new URL(modulePath, location)
     const cleanup = (script: any) => {
       URL.revokeObjectURL(script.src)
       script.remove()
